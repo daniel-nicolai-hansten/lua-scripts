@@ -297,8 +297,7 @@ local function initialize(storage,format,images,high_quality,extra_data)
       and existing_asset_action_widget.selected or EXISTING_ASSET_ACTION_STACK
   extra_data.album_mode = album_mode_widget ~= nil and album_mode_widget.selected or ALBUM_MODE_NONE
   if extra_data.album_mode == ALBUM_MODE_TITLE
-      or extra_data.album_mode == ALBUM_MODE_COPY_AND_TITLE
-      or extra_data.album_mode == ALBUM_MODE_USE_ALBUM_TITLE then
+      or extra_data.album_mode == ALBUM_MODE_COPY_AND_TITLE then
     prefill_title_widget_from_images(images)
   end
 
@@ -773,11 +772,18 @@ local function store_image(storage,image,format,filename,number,total,high_quali
     if album_mode == ALBUM_MODE_TITLE
         or album_mode == ALBUM_MODE_COPY_AND_TITLE
         or album_mode == ALBUM_MODE_USE_ALBUM_TITLE then
-      local album_name = title_widget.text or ""
-      if album_name == "" then
-        debug_log("album mode is title but no title was provided; skipping album assignment")
+      local album_name
+      if album_mode == ALBUM_MODE_USE_ALBUM_TITLE then
+        -- Uses darktable's own folder name for the image rather than the manual
+        -- title input box, which is hidden for this mode.
+        album_name = basename_from_path(image.path)
       else
-        debug_log("album mode is title; resolved album name '" .. tostring(album_name) .. "' for image " .. tostring(image.id))
+        album_name = title_widget.text or ""
+      end
+      if album_name == "" then
+        debug_log("album mode requires an album name but none was available; skipping album assignment")
+      else
+        debug_log("album mode resolved album name '" .. tostring(album_name) .. "' for image " .. tostring(image.id))
         local album_assets = extra_data.album_assets[album_name]
         if album_assets == nil then
           album_assets = {}
@@ -883,7 +889,7 @@ existing_asset_action_widget = dt.new_widget("combobox") {
 }
 album_title_row_widget = dt.new_widget("box") {
     orientation=horizontal,
-  dt.new_widget("label"){label = _("Album Title"), tooltip = _("Used only when Album mode is set to 'Custom'. Leave empty to skip album assignment.") },
+  dt.new_widget("label"){label = _("Album Title"), tooltip = _("Used only when Album mode is set to 'Custom' or 'Copy existing + Custom'. Leave empty to skip album assignment. Not used for 'Use Album Title', which automatically uses each image's folder name instead.") },
     title_widget
 }
 
