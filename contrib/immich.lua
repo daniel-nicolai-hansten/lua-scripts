@@ -484,6 +484,11 @@ end
 
 local function upload_image(image,filename) 
   local date = iso_exif_datetime_taken(image)
+  local f, open_err = io.open(filename, "rb")
+  if f == nil then
+    debug_log("failed to open export file '" .. tostring(filename) .. "': " .. tostring(open_err))
+    return nil
+  end
   local form_data = {
     deviceAssetId=tostring(image.id),
     deviceId=IMMICH_DEVICE_ID,
@@ -491,12 +496,13 @@ local function upload_image(image,filename)
     fileModifiedAt=date,
     assetData={
       filename=df.get_filename(filename),
-      file=io.open(filename)
+      file=f
     }
   }
   debug_log("uploading new asset for image " .. tostring(image.id))
   local res,err = call_immich_api("POST","assets",form_data,"multipart/form-data")
-  if err == 201 then
+  f:close()
+  if err == 201 and res ~= nil then
     debug_log("upload succeeded with asset id " .. tostring(res.id))
     return res.id
   end
