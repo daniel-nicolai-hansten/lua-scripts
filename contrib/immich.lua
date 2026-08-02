@@ -212,17 +212,26 @@ local ltn12 = need("ltn12",       "luasocket")
 du.check_min_api_version("7.0.0", "immich") 
 
 local function call_immich_api(method,api,body,content_type) 
-  local immichserver = dt.preferences.read("immich","immich_server","string")
-  local client = string.find(immichserver,"^https") ~= nil and https or http
+  local immichserver = dt.preferences.read("immich","immich_server","string") or ""
+  if immichserver == "" then
+    debug_log("missing Immich server URL (immich_server preference)")
+    return nil, "missing_server_url", nil
+  end
+
+  local client = immichserver:match("^https") and https or http
   local headers = { }
-  headers["x-api-key"] = dt.preferences.read("immich","immich_key","string")
+  headers["x-api-key"] = dt.preferences.read("immich","immich_key","string") or ""
   local source = nil
   if body == nil then
   elseif (content_type == nil or content_type == "application/json") then
     headers["Content-Type"] = "application/json"
-    source = cjson.encode(body)
-    headers["Content-Length"] = string.len(source)
-    source = ltn12.source.string(source)
+    local encoded, enc_err = cjson.encode(body)
+    if not encoded then
+      debug_log("JSON encode failed for /api/" .. tostring(api) .. ": " .. tostring(enc_err))
+      return nil, "json_encode_failed", nil
+    end
+    headers["Content-Length"] = #encoded
+    source = ltn12.source.string(encoded)
   elseif (content_type == "multipart/form-data") then 
     local boundary = "----DarktableImmichBoundary" .. math.random(1, 1e16)
     headers["Content-Type"] = "multipart/form-data; boundary="..boundary
