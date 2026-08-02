@@ -273,13 +273,12 @@ local function call_immich_api(method,api,body,content_type)
     source=source,
     sink=ltn12.sink.table(res_table)
   }
-  if response_headers ~= nil and response_headers["content-type"] == "application/json; charset=utf-8" then
-    local body_text = table.concat(res_table)
-    debug_log("response " .. tostring(err) .. " for /api/" .. api .. " -> " .. body_text)
-    return cjson.decode(body_text), err, response_headers
-  end
   local body_text = table.concat(res_table)
   debug_log("response " .. tostring(err) .. " for /api/" .. api .. " -> " .. body_text)
+  local ct = response_headers ~= nil and response_headers["content-type"] or ""
+  if type(ct) == "string" and string.lower(ct):match("^application/json") then
+    return cjson.decode(body_text), err, response_headers
+  end
   return body_text, err, response_headers
 end
 
