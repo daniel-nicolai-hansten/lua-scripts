@@ -115,7 +115,7 @@ local function image_can_skip_remote_work(image, existing_asset_action)
 
   local cached_asset_id = nil
   local cached_change_marker = nil
-  local tags = image.get_tags(image)
+  local tags = image:get_tags()
   if tags == nil then
     return false
   end
