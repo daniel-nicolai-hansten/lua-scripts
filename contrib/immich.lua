@@ -344,7 +344,16 @@ local function initialize(storage,format,images,high_quality,extra_data)
 end
 
 local function iso_exif_datetime_taken(image) 
-  local yr,mo,dy,h,m,s = string.match(image.exif_datetime_taken, "(%d-):(%d-):(%d-) (%d-):(%d-):(%d+)")
+  local exif = image ~= nil and image.exif_datetime_taken or nil
+  if exif == nil or exif == "" then
+    return os.date("!%Y-%m-%dT%H:%M:%S") .. "Z"
+  end
+
+  local yr,mo,dy,h,m,s = string.match(exif, "(%d+):(%d+):(%d+) (%d+):(%d+):(%d+)")
+  if yr == nil then
+    return os.date("!%Y-%m-%dT%H:%M:%S") .. "Z"
+  end
+
   local timestamp = os.time{year=yr, month=mo, day=dy, hour=h, min=m, sec=s}
   return os.date("!%Y-%m-%dT%H:%M:%S", timestamp) .. "Z"
 end
