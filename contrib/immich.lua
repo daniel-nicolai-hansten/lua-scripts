@@ -509,7 +509,6 @@ local function upload_image(image,filename)
   }
   debug_log("uploading new asset for image " .. tostring(image.id))
   local res,err = call_immich_api("POST","assets",form_data,"multipart/form-data")
-  f:close()
   if err == 201 and res ~= nil then
     debug_log("upload succeeded with asset id " .. tostring(res.id))
     return res.id
